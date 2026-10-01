@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pytelemetry", description="PyTelemetry dashboard.")
     parser.add_argument("--connect", metavar="URL", help="serial url, e.g. COM5 or socket://host:port")
     parser.add_argument("--demo", action="store_true", help="run against the built-in synthetic source")
+    parser.add_argument("--sim", action="store_true", help="start the simulator in-process and connect to it")
     parser.add_argument("--self-test", action="store_true", help="headless self-test, exit 0 on success")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -76,10 +77,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         from pytelemetry.ui.app import run_app
-    except NotImplementedError:
-        _log.error("the GUI lands in M3; use `pytelemetry --self-test` or `pytelemetry-sim` for now")
+    except ImportError as exc:
+        _log.error("GUI needs the UI extras (PySide6/pyqtgraph): %s", exc)
+        _log.error("use `pytelemetry --self-test` or `pytelemetry-sim` for a headless run")
         return 2
-    return run_app(connect=args.connect, demo=args.demo)
+    return run_app(connect=args.connect, demo=args.demo, sim=args.sim)
 
 
 if __name__ == "__main__":
