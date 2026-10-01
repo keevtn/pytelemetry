@@ -1,0 +1,56 @@
+[project]
+name = "pytelemetry"
+version = "0.1.0"
+description = "PyTelemetry - Python telemetry dashboard for microcontrollers over serial (PyTelemetry v1 wire protocol)"
+requires-python = ">=3.12"
+dependencies = [
+    "pyside6>=6.7",
+    "pyqtgraph>=0.13",
+    "pyserial>=3.5",
+    "numpy>=1.26",
+    "tomli-w>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.scripts]
+pytelemetry = "pytelemetry.cli:main"
+pytelemetry-sim = "pytelemetry.cli:sim_main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pytelemetry"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "soak: long-running throughput/memory soak tests (deselect with -m 'not soak')",
+]
+qt_api = "pyside6"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["pytelemetry.core", "pytelemetry.sim"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "pytelemetry.ui.*"
+strict = false
+ignore_errors = true
