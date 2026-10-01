@@ -64,7 +64,7 @@ int main(void) {
     char frame[128];
     LiveDataPacket_t p;
 
-    printf("{\n  \"generated_from\": \"firmware/Dashboard.c + COBS.c (HoustonV2 src/dashboard)\",\n");
+    printf("{\n  \"generated_from\": \"firmware/Dashboard.c + COBS.c (upstream src/dashboard)\",\n");
     printf("  \"notes\": \"device_to_host entries are COBS-encoded with trailing 0x00; host_to_device entries are raw. "
            "Multi-frame entries list every frame the device sent, in order.\",\n");
     printf("  \"check_values\": {\"crc16_arc_123456789\": \"0x%04x\", \"crc32_payload_123456789\": \"0x%08x\", \"crc32_payload_empty\": \"0x%08x\", "
