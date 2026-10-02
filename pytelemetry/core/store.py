@@ -70,7 +70,7 @@ class TelemetryStore:
                 if ring is None:
                     ring = RingBuffer(self._history)
                     self._rings[item.key] = ring
-                ring.append(item.t, float(item.value))  # type: ignore[arg-type]
+                ring.append(item.t, float(item.value))
 
     def on_alert(self, item: Alert) -> None:
         with self._lock:

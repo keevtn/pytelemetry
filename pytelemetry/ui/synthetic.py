@@ -52,7 +52,9 @@ class SyntheticSource:
     def modify_live_var(self, var_id: int, value_type: int, value: int | float | bool) -> None:
         cur = self._live.get(var_id)
         if cur is not None:
-            self._live[var_id] = LiveVar(cur.id, cur.type, value, cur.name, cur.unit, cur.minimum, cur.maximum)
+            self._live[var_id] = LiveVar(
+                cur.id, cur.type, value, cur.name, cur.unit, cur.minimum, cur.maximum
+            )
             self._bus.emit_live_data(tuple(self._live.values()))
 
     @property
@@ -66,8 +68,12 @@ class SyntheticSource:
             now = time.monotonic()
             t = now - start
             self._bus.emit_telemetry(Telemetry("Voltage", ValueType.FLOAT, 12.0 + 0.5 * math.sin(t * 2), now))
-            self._bus.emit_telemetry(Telemetry("Current", ValueType.FLOAT, 1.5 + 0.3 * math.sin(t * 3 + 1), now))
-            self._bus.emit_telemetry(Telemetry("RPM", ValueType.INT32, int(3000 + 1500 * math.sin(t * 0.7)), now))
+            self._bus.emit_telemetry(
+                Telemetry("Current", ValueType.FLOAT, 1.5 + 0.3 * math.sin(t * 3 + 1), now)
+            )
+            self._bus.emit_telemetry(
+                Telemetry("RPM", ValueType.INT32, int(3000 + 1500 * math.sin(t * 0.7)), now)
+            )
             self._bus.emit_telemetry(Telemetry("Noise", ValueType.FLOAT, math.sin(t * 50) * 0.2, now))
             self._frames += 4
             if now - last_mode > 1.0:

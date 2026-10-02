@@ -16,7 +16,11 @@ from pytelemetry.core.types import ValueType
 from pytelemetry.sim.fake_device import FakeDevice
 
 VECTORS = json.loads((Path(__file__).parent.parent / "golden" / "vectors.json").read_text())
-EXCHANGES = {it["name"]: [bytes.fromhex(h) for h in it["wire"]] for it in VECTORS["vectors"] if it["section"] == "exchange"}
+EXCHANGES = {
+    it["name"]: [bytes.fromhex(h) for h in it["wire"]]
+    for it in VECTORS["vectors"]
+    if it["section"] == "exchange"
+}
 
 
 def _device() -> FakeDevice:

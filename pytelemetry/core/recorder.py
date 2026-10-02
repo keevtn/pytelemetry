@@ -9,7 +9,7 @@ from __future__ import annotations
 import csv
 import threading
 from pathlib import Path
-from typing import TextIO
+from typing import Any, TextIO
 
 from pytelemetry.core.types import Telemetry
 
@@ -20,7 +20,7 @@ class CsvRecorder:
     def __init__(self, path: str | Path) -> None:
         self._path = Path(path)
         self._fh: TextIO | None = None
-        self._writer: csv.writer | None = None  # type: ignore[type-arg]
+        self._writer: Any = None  # csv.writer is a function, not a type; Any keeps mypy --strict happy
         self._columns: list[str] = ["t"]
         self._lock = threading.Lock()
 

@@ -15,7 +15,7 @@ class PortInfo:
 
 def list_ports() -> list[PortInfo]:
     try:
-        from serial.tools import list_ports
+        from serial.tools import list_ports  # type: ignore[import-untyped]
     except ImportError:
         return []
     return [PortInfo(p.device, p.description or "") for p in sorted(list_ports.comports())]

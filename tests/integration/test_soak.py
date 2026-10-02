@@ -5,7 +5,6 @@ PROTOCOL.md section 8: the pipeline must sustain >= 2,000 frames/s with zero dro
 
 from __future__ import annotations
 
-import threading
 import time
 
 import pytest

@@ -140,7 +140,12 @@ def encode_device_raw(packet_type: int, content_type: int, key: bytes, value: by
 
 def encode_telemetry(key: str, value_type: int, value: int | float | bool | str) -> bytes | None:
     kb = key.encode("ascii")
-    vb = value.encode("utf-8") if value_type == ValueType.STRING else pack_live_value(value_type, value)  # type: ignore[arg-type]
+    if value_type == ValueType.STRING:
+        assert isinstance(value, str)
+        vb = value.encode("utf-8")
+    else:
+        assert not isinstance(value, str)
+        vb = pack_live_value(value_type, value)
     return encode_device_raw(PacketType.TELEMETRY, value_type, kb, vb)
 
 

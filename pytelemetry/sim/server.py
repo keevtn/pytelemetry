@@ -7,6 +7,7 @@ sockets only — no Qt, no pyserial on the server side.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import socket
 import threading
@@ -96,18 +97,16 @@ class SimServer:
                 for ch in self._channels:
                     if now - last[ch.key] >= ch.period_s:
                         last[ch.key] = now
-                        key, vtype, value = ch.sample(t)
-                        for frame in device.telemetry(key, vtype, value):
+                        ch_key, ch_type, ch_val = ch.sample(t)
+                        for frame in device.telemetry(ch_key, ch_type, ch_val):
                             try:
                                 conn.sendall(frame)
                             except OSError:
                                 return
                 time.sleep(self._interval)
         finally:
-            try:
+            with contextlib.suppress(OSError):
                 conn.close()
-            except OSError:
-                pass
 
 
 def serve(port: int = 5555) -> None:

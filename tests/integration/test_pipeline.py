@@ -5,8 +5,6 @@ from __future__ import annotations
 import threading
 import time
 
-import pytest
-
 from pytelemetry.core.session import Session
 from pytelemetry.core.store import TelemetryStore
 from pytelemetry.core.transport.memory_transport import memory_pair
@@ -75,16 +73,22 @@ def test_session_over_socket_gets_scripted_telemetry(sim_server) -> None:
             data = b""
         if data:
             frames += framer.feed(data)
-        if any(f.header.packet_type == PacketType.RESPONSE_LIVE_DATA for f in frames):
-            if sum(f.header.packet_type == PacketType.TELEMETRY for f in frames) > 4:
-                break
+        has_live = any(f.header.packet_type == PacketType.RESPONSE_LIVE_DATA for f in frames)
+        if has_live and sum(f.header.packet_type == PacketType.TELEMETRY for f in frames) > 4:
+            break
     conn.close()
 
     live = [f for f in frames if f.header.packet_type == PacketType.RESPONSE_LIVE_DATA]
-    assert live and codec.parse_live_data(live[0].value) == ((1, 2, 3.0), (2, 1, 10), (3, 3, True), (4, 0, 4000))
-    tele_keys = {
-        f.key.decode() for f in frames if f.header.packet_type == PacketType.TELEMETRY
-    } - {"CalculuatedCRC", "ReceivedCRC"}
+    assert live and codec.parse_live_data(live[0].value) == (
+        (1, 2, 3.0),
+        (2, 1, 10),
+        (3, 3, True),
+        (4, 0, 4000),
+    )
+    tele_keys = {f.key.decode() for f in frames if f.header.packet_type == PacketType.TELEMETRY} - {
+        "CalculuatedCRC",
+        "ReceivedCRC",
+    }
     assert "Voltage" in tele_keys and "RPM" in tele_keys
 
 

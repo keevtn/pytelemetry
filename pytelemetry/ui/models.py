@@ -33,14 +33,12 @@ class TelemetryTableModel(QAbstractTableModel):
             self._keys = keys
             self.endResetModel()
         elif keys:
-            self.dataChanged.emit(
-                self.index(0, 1), self.index(len(keys) - 1, len(_HEADERS) - 1)
-            )
+            self.dataChanged.emit(self.index(0, 1), self.index(len(keys) - 1, len(_HEADERS) - 1))
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return 0 if parent.isValid() else len(self._keys)
+    def rowCount(self, parent: QModelIndex | None = None) -> int:
+        return 0 if parent is not None and parent.isValid() else len(self._keys)
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex | None = None) -> int:
         return len(_HEADERS)
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole):

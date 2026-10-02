@@ -8,7 +8,6 @@ by channel index.
 from __future__ import annotations
 
 import pyqtgraph as pg
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -92,7 +91,7 @@ class PlotsPanel(QWidget):
 
     def _refresh_channel_list(self) -> None:
         existing = {self._channels.item(i).text() for i in range(self._channels.count())}
-        for key in self._store.keys():
+        for key in self._store.keys():  # noqa: SIM118 -- TelemetryStore.keys() is a method, not a dict
             if key in existing:
                 continue
             # only plottable (numeric) channels have history

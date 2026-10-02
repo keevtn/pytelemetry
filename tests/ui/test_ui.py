@@ -28,8 +28,14 @@ def test_window_builds(qtbot) -> None:
     win = MainWindow()
     qtbot.addWidget(win)
     assert win.windowTitle() == "PyTelemetry"
-    for panel in (win.connect_panel, win.telemetry_panel, win.plots_panel, win.alerts_panel,
-                  win.livevars_panel, win.recording_panel):
+    for panel in (
+        win.connect_panel,
+        win.telemetry_panel,
+        win.plots_panel,
+        win.alerts_panel,
+        win.livevars_panel,
+        win.recording_panel,
+    ):
         assert panel is not None
 
 

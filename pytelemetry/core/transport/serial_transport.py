@@ -1,4 +1,4 @@
-"""pyserial transport via serial_for_url (COM5, /dev/ttyUSB0, socket://, loop://). Owner: protocol-engineer."""
+"""pyserial transport via serial_for_url (COM5, /dev/ttyUSB0, socket://). Owner: protocol-engineer."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ class SerialTransport:
         self._ser: Any = None
 
     def open(self) -> None:
-        import serial  # local import by design
+        import serial  # type: ignore[import-untyped]  # local import by design
 
         try:
             self._ser = serial.serial_for_url(

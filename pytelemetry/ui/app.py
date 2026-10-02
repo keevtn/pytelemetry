@@ -9,14 +9,14 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import QSettings, QTimer, Qt
+from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtWidgets import QApplication, QDockWidget, QLabel, QMainWindow
 
 from pytelemetry.core.config import load_config
 from pytelemetry.core.session import Session
 from pytelemetry.core.store import TelemetryStore
 from pytelemetry.core.transport.serial_transport import SerialTransport
-from pytelemetry.core.types import AppConfig, ChannelConfig
+from pytelemetry.core.types import AppConfig
 from pytelemetry.ui.panels.alerts import AlertsPanel
 from pytelemetry.ui.panels.connect import ConnectPanel
 from pytelemetry.ui.panels.livevars import LiveVarsPanel
