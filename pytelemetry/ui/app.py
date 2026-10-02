@@ -7,9 +7,10 @@ and refreshes every panel in one batch. Widgets are touched only here, on the GU
 
 from __future__ import annotations
 
+import threading
 import time
 
-from PySide6.QtCore import QSettings, Qt, QTimer
+from PySide6.QtCore import QSettings, Qt, QTimer, Signal
 from PySide6.QtWidgets import QApplication, QDockWidget, QLabel, QMainWindow
 
 from pytelemetry.core.config import load_config
@@ -32,6 +33,11 @@ _REFRESH_MS = 33  # ~30 Hz
 
 
 class MainWindow(QMainWindow):
+    # Emitted from the background connect thread; Qt queues them onto the GUI thread (cross-thread
+    # connections are queued by default), so the handlers run where it's safe to touch widgets.
+    _connectSucceeded = Signal(object, str, int, int)
+    _connectFailed = Signal(str, int)
+
     def __init__(self, config: AppConfig | None = None) -> None:
         super().__init__()
         self.setWindowTitle("PyTelemetry")
@@ -67,6 +73,10 @@ class MainWindow(QMainWindow):
         self.connect_panel.disconnectRequested.connect(self._disconnect)
         self.telemetry_panel.plotChannel.connect(self.plots_panel.add_channel)
         self.recording_panel.recordingChanged.connect(self._on_recording)
+        self._connectSucceeded.connect(self._on_connect_succeeded)
+        self._connectFailed.connect(self._on_connect_failed)
+        self._connecting = False
+        self._connect_gen = 0  # bumped on every connect/disconnect; stale in-flight connects are abandoned
 
         self._last_frames = 0
         self._last_time = time.monotonic()
@@ -135,20 +145,48 @@ class MainWindow(QMainWindow):
         self._connect(url, baud)
 
     def _connect(self, url: str, baud: int) -> None:
+        if self._connecting:
+            return  # a connect is already in flight; ignore the repeat click
         self._teardown()
-        try:
-            session = Session(SerialTransport(url, baud), live_var_config=self._live_cfg)
-            session.add_sink(self._store)
-            self._attach_recorder(session)
-            session.start()
-            session.request_live_data()
-        except Exception as exc:  # surface connect failures in the UI, don't crash
-            self._status.setText(f"Connect failed: {exc}")
-            self.connect_panel.set_connected(False)
+        self._connect_gen += 1
+        gen = self._connect_gen
+        self._connecting = True
+        self._status.setText(f"Connecting to {url}…")
+        # Opening the transport (serial_for_url / socket connect) can block for the connect timeout, so it
+        # runs on a worker thread — never the GUI thread (CLAUDE.md: nothing on the GUI thread blocks on I/O).
+        # The recorder is captured here, on the GUI thread, rather than read off the panel in the worker.
+        rec = self.recording_panel.recorder
+
+        def worker() -> None:
+            try:
+                session = Session(SerialTransport(url, baud), live_var_config=self._live_cfg)
+                session.add_sink(self._store)
+                if rec is not None:
+                    session.add_sink(rec)
+                session.start()  # opens the transport here, off the GUI thread
+                session.request_live_data()
+            except Exception as exc:  # surface connect failures in the UI, don't crash
+                self._connectFailed.emit(str(exc), gen)
+                return
+            self._connectSucceeded.emit(session, url, baud, gen)
+
+        threading.Thread(target=worker, name="pytelemetry-connect", daemon=True).start()
+
+    def _on_connect_succeeded(self, session: Session, url: str, baud: int, gen: int) -> None:
+        if gen != self._connect_gen:  # user disconnected or started another connect while this was opening
+            session.stop()
             return
+        self._connecting = False
         self._controller = session
         self.connect_panel.set_connected(True, url)
         self._status.setText(f"Connected — {url} @ {baud}")
+
+    def _on_connect_failed(self, message: str, gen: int) -> None:
+        if gen != self._connect_gen:  # superseded; don't clobber the newer state
+            return
+        self._connecting = False
+        self.connect_panel.set_connected(False)
+        self._status.setText(f"Connect failed: {message}")
 
     def _disconnect(self) -> None:
         self._teardown()
@@ -156,6 +194,8 @@ class MainWindow(QMainWindow):
         self._status.setText("Disconnected")
 
     def _teardown(self) -> None:
+        self._connect_gen += 1  # abandon any connect still opening in the background
+        self._connecting = False
         if self._controller is not None:
             self._controller.stop()
             self._controller = None

@@ -24,7 +24,8 @@ class EventBus:
 
     def add_sink(self, sink: EventSink) -> None:
         with self._lock:
-            self._sinks.append(sink)
+            if sink not in self._sinks:  # idempotent: re-adding the same sink must not double-deliver
+                self._sinks.append(sink)
 
     def _snapshot(self) -> list[EventSink]:
         with self._lock:

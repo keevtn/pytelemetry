@@ -20,7 +20,7 @@ _WAITING = 0
 _HEADER_RECEIVED = 1
 
 
-@dataclass
+@dataclass(slots=True)
 class _LiveVar:
     var_id: int
     value_type: int

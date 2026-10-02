@@ -1,7 +1,8 @@
 """Telemetry store: per-channel numpy ring buffers + latest/alerts/live-vars. Owner: core-engineer.
 
-The UI drains this at 30 Hz, so reads return numpy array views (no copies) and all access is mutex-guarded
-because writes arrive on the reader thread. One ring buffer pair (time, value) per numeric channel,
+The UI drains this at 30 Hz; reads return oldest-first numpy copies (safe to hold across concurrent writes)
+and all access is mutex-guarded because writes arrive on the reader thread. One ring buffer pair (time,
+value) per numeric channel,
 preallocated to history_samples (PROTOCOL.md section 8: >= 100k samples/channel).
 """
 
@@ -18,7 +19,7 @@ __all__ = ["TelemetryStore", "RingBuffer"]
 
 
 class RingBuffer:
-    """Fixed-capacity numeric ring buffer. Views are oldest-first and valid until the next write."""
+    """Fixed-capacity numeric ring buffer. Reads return oldest-first copies, safe to hold across writes."""
 
     def __init__(self, capacity: int) -> None:
         self._cap = max(1, capacity)
@@ -35,8 +36,11 @@ class RingBuffer:
             self._count += 1
 
     def view(self) -> tuple[np.ndarray, np.ndarray]:
+        # Copies, not views: the caller (pyqtgraph) holds the result until the next 30 Hz refresh, during
+        # which the reader thread keeps appending; a bare slice would be mutated under it once the buffer
+        # wraps. The full-buffer path already copies via fancy indexing; the partial path copies explicitly.
         if self._count < self._cap:
-            return self._t[: self._count], self._v[: self._count]
+            return self._t[: self._count].copy(), self._v[: self._count].copy()
         # full: reorder oldest-first
         idx = np.arange(self._head, self._head + self._cap) % self._cap
         return self._t[idx], self._v[idx]
